@@ -1,14 +1,60 @@
-from flask import Flask, render_template, request, redirect
+import os
+import quandl
+import pandas as pd
+from flask import Flask, render_template, flash, request
+from bokeh.plotting import figure, output_file, show
+from bokeh.embed import components
+from bokeh.resources import INLINE
+from bokeh.util.string import encode_utf8
 
 app = Flask(__name__)
 
+def create_figure(stock_ticker,s1):
+    dates=[]
+    for i in range(1,29):
+        dates.append('2018-02-'+str(i))
+    dates=','.join(dates)
+    quandl.ApiConfig.api_key = 'Sb_waxRgk-PYbGL_s2N-'
+    aa=quandl.get_table('WIKI/PRICES', ticker=stock_ticker, date=dates)
+    days=aa.date.dt.day
+    # create a new plot with a title and axis labels
+    p = figure(title="Quandl Wiki EOD Stock Price - Feb 2017",
+        x_axis_label='date', y_axis_label='Price (Dollars)')
+    l_color = ['blue','red','green','orange']
+
+    ydata = ['open','adj_open','close','adj_close'];
+    # add a line renderer with legend and line thickness
+    for i in range(4):
+        if s1[i] == '1':
+            p.line(days, aa.loc[:,ydata[i]], legend=stock_ticker+':'+ydata[i],
+                    line_color=l_color[i], line_width=2)
+    return p
+
 @app.route('/')
-def index():
-  return render_template('index.html')
+def inputdata():
+    return render_template('stock_input.html')
 
-@app.route('/about')
-def about():
-  return render_template('about.html')
+@app.route("/result",methods = ['GET','POST'])
+def resultpage():
+    # Create the plot
+    select = request.form.get('ticker')
+    s1 = list(map(request.form.get,('C_P','AC_P','O_P','AO_P')))
+    p = create_figure(select,s1)
+    # grab the static resources
+    js_resources = INLINE.render_js()
+    css_resources = INLINE.render_css()
 
-if __name__ == '__main__':
-  app.run(port=33507)
+    # render template
+    script, div = components(p)
+    html = render_template(
+        'result.html',
+        plot_script=script,
+        plot_div=div,
+        js_resources=js_resources,
+        css_resources=css_resources,
+    )
+    return encode_utf8(html)
+
+if __name__ == "__main__":
+	port = int(os.environ.get("PORT",5000))
+	app.run(host='0.0.0.0',port=port,debug=True)
