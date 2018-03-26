@@ -6,7 +6,6 @@ from bokeh.plotting import figure, output_file, show
 from bokeh.embed import components
 from bokeh.resources import INLINE
 from bokeh.util.string import encode_utf8
-from boto.s3.connection import S3Connection
 
 app = Flask(__name__)
 
@@ -15,7 +14,7 @@ def create_figure(stock_ticker,s1):
     for i in range(1,29):
         dates.append('2018-02-'+str(i))
     dates=','.join(dates)
-    s3 = S3Connection(os.environ['APIKEY_DATA'])
+    s3 = os.environ['APIKEY_DATA']
     quandl.ApiConfig.api_key = s3
     aa=quandl.get_table('WIKI/PRICES', ticker=stock_ticker, date=dates)
     days=aa.date.dt.day
