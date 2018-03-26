@@ -46,14 +46,13 @@ def resultpage():
 
     # render template
     script, div = components(p)
-    html = render_template(
+    return render_template(
         'result.html',
         plot_script=script,
         plot_div=div,
         js_resources=js_resources,
         css_resources=css_resources,
     )
-    return encode_utf8(html)
 
 if __name__ == "__main__":
 	port = int(os.environ.get("PORT",5000))
